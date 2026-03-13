@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePersistedState } from '@/lib/utils';
 import { Announcement } from '@/data/types';
 import { isSupabaseEnabled, supabase } from '@/lib/supabase/client';
+import { notifyClassMembers } from '@/lib/notification-events';
 
 export function useAnnouncements(classId?: string) {
   const storageKey = `unistu_announcements_${classId || 'global'}`;
@@ -69,6 +70,17 @@ export function useAnnouncements(classId?: string) {
   const addAnnouncement = async (announcement: Announcement) => {
     if (!isSupabaseEnabled || !supabase || !classId) {
       setLocalAnnouncements(prev => [announcement, ...prev]);
+
+      if (announcement.authorRole === 'teacher' || announcement.authorRole === 'cr') {
+        await notifyClassMembers({
+          classId,
+          actorId: announcement.createdBy,
+          type: 'announcement',
+          title: 'New Announcement',
+          message: `${announcement.author}: ${announcement.title}`,
+          payload: { announcementId: announcement.id },
+        });
+      }
       return;
     }
 
@@ -86,6 +98,18 @@ export function useAnnouncements(classId?: string) {
 
     if (error) {
       console.warn('Failed to create announcement', error.message);
+      return;
+    }
+
+    if (announcement.authorRole === 'teacher' || announcement.authorRole === 'cr') {
+      await notifyClassMembers({
+        classId,
+        actorId: announcement.createdBy,
+        type: 'announcement',
+        title: 'New Announcement',
+        message: `${announcement.author}: ${announcement.title}`,
+        payload: { announcementId: announcement.id },
+      });
     }
   };
 

@@ -262,6 +262,19 @@ export default function CRSchedulePage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
+                <label className="block text-xs text-muted-foreground mb-1.5 font-medium">Day</label>
+                <select
+                  value={form.day}
+                  onChange={e => setForm({ ...form, day: e.target.value })}
+                  className="w-full bg-input rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  required
+                >
+                  {daysOfWeek.map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs text-muted-foreground mb-1.5 font-medium">Time Slot</label>
                 <input
                   type="text"

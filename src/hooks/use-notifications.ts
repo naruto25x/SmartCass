@@ -6,11 +6,36 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function useNotifications() {
   const { user } = useAuth();
-  const [localNotifications, setLocalNotifications] = usePersistedState<Notification[]>(
-    'unistu_notifications',
-    []
+  const [localNotificationsByUser, setLocalNotificationsByUser] = usePersistedState<Record<string, Notification[]>>(
+    'unistu_notifications_by_user',
+    {}
   );
   const [remoteNotifications, setRemoteNotifications] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    // Migrate legacy flat notifications storage to per-user storage once a user is known.
+    if (!user?.id) return;
+
+    try {
+      const rawLegacy = localStorage.getItem('unistu_notifications');
+      if (!rawLegacy) return;
+
+      const legacy = JSON.parse(rawLegacy) as Notification[];
+      if (!Array.isArray(legacy) || legacy.length === 0) return;
+
+      setLocalNotificationsByUser(prev => {
+        const existing = prev[user.id] || [];
+        return {
+          ...prev,
+          [user.id]: [...legacy, ...existing],
+        };
+      });
+
+      localStorage.removeItem('unistu_notifications');
+    } catch {
+      // Ignore malformed legacy data.
+    }
+  }, [setLocalNotificationsByUser, user?.id]);
 
   useEffect(() => {
     if (!isSupabaseEnabled || !supabase || !user?.id) return;
@@ -63,14 +88,18 @@ export function useNotifications() {
 
   const notifications = useMemo(() => {
     if (!isSupabaseEnabled || !user?.id) {
-      return localNotifications;
+      return user?.id ? localNotificationsByUser[user.id] || [] : [];
     }
     return remoteNotifications;
-  }, [localNotifications, remoteNotifications, user?.id]);
+  }, [localNotificationsByUser, remoteNotifications, user?.id]);
 
   const markAsRead = async (id: string) => {
     if (!isSupabaseEnabled || !supabase || !user?.id) {
-      setLocalNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+      if (!user?.id) return;
+      setLocalNotificationsByUser(prev => ({
+        ...prev,
+        [user.id]: (prev[user.id] || []).map(n => (n.id === id ? { ...n, read: true } : n)),
+      }));
       return;
     }
 
@@ -87,7 +116,11 @@ export function useNotifications() {
 
   const markAllRead = async () => {
     if (!isSupabaseEnabled || !supabase || !user?.id) {
-      setLocalNotifications(prev => prev.map(item => ({ ...item, read: true })));
+      if (!user?.id) return;
+      setLocalNotificationsByUser(prev => ({
+        ...prev,
+        [user.id]: (prev[user.id] || []).map(item => ({ ...item, read: true })),
+      }));
       return;
     }
 

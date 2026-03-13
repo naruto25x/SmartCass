@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardList, Plus, ChevronDown, Clock, MapPin, BookOpen, Trash2, Edit3, ArrowLeft, X } from 'lucide-react';
 import { formatDistanceToNow, isPast, parseISO, format } from 'date-fns';
 import { useNavigate, useParams } from 'react-router-dom';
+import { notifyClassMembers } from '@/lib/notification-events';
 
 export default function ClassTestsPage() {
   const { user } = useAuth();
@@ -54,7 +55,7 @@ export default function ClassTestsPage() {
     setShowForm(true);
   };
 
-  const handleAddTest = (e: React.FormEvent) => {
+  const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
       setTests(prev => prev.map(t => t.id === editingId ? {
@@ -83,6 +84,15 @@ export default function ClassTestsPage() {
         venue: venue.trim(),
       };
       setTests(prev => [newTest, ...prev]);
+
+      await notifyClassMembers({
+        classId,
+        actorId: user?.id,
+        type: 'attendance',
+        title: 'New CT Added',
+        message: `${newTest.ctNumber} (${newTest.courseCode}) has been added.`,
+        payload: { testId: newTest.id },
+      });
     }
     resetForm();
   };

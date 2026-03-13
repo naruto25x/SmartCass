@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Announcement } from '@/data/types';
@@ -30,15 +30,23 @@ export default function AnnouncementsPage() {
 
   const canManageAnnouncement = (ann: Announcement) => {
     if (!canPost || !user) return false;
-    if (ann.authorRole !== user.role) return false;
 
     if (ann.createdBy) {
       return ann.createdBy === user.id;
     }
 
     // Backward compatibility for old announcements without createdBy.
-    return ann.author === currentAuthorName;
+    return ann.author === currentAuthorName && ann.authorRole === user.role;
   };
+
+  const visibleAnnouncements = useMemo(() => {
+    if (!user) return [];
+    if (user.role === 'student') return announcements;
+    if (user.role === 'cr') {
+      return announcements.filter(ann => ann.authorRole === 'teacher' || canManageAnnouncement(ann));
+    }
+    return announcements.filter(canManageAnnouncement);
+  }, [announcements, user]);
 
   const resetForm = () => {
     setTitle('');
@@ -53,7 +61,7 @@ export default function AnnouncementsPage() {
     if (!title.trim() || !message.trim()) return;
 
     if (editingId) {
-      const editing = announcements.find(item => item.id === editingId);
+      const editing = visibleAnnouncements.find(item => item.id === editingId);
       if (!editing || !canManageAnnouncement(editing)) return;
 
       void updateAnnouncement(editingId, {
@@ -89,7 +97,7 @@ export default function AnnouncementsPage() {
   };
 
   const handleDelete = (id: string) => {
-    const target = announcements.find(item => item.id === id);
+    const target = visibleAnnouncements.find(item => item.id === id);
     if (!target || !canManageAnnouncement(target)) return;
     void deleteAnnouncement(id);
   };
@@ -197,7 +205,7 @@ export default function AnnouncementsPage() {
       </AnimatePresence>
 
       <div className="space-y-3">
-        {announcements.map((ann, i) => {
+        {visibleAnnouncements.map((ann, i) => {
           const config = priorityConfig[ann.priority];
           return (
             <motion.div

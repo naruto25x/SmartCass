@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClassRooms } from '@/hooks/use-classrooms';
-import { useStudents } from '@/hooks/use-students';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Search, Users } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
@@ -9,7 +8,6 @@ import { useNavigate, Navigate } from 'react-router-dom';
 export default function JoinClassPage() {
   const { user, joinClass, joinedClassIds, isProfileComplete } = useAuth();
   const { classRooms, updateClass } = useClassRooms();
-  const { students: allStudentsHook } = useStudents();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
@@ -115,18 +113,6 @@ export default function JoinClassPage() {
             Join Class
           </motion.button>
         </form>
-      </div>
-
-      {/* Available codes hint */}
-      <div className="mt-6 bg-card/50 rounded-2xl p-4 border border-border/50">
-        <p className="text-xs text-muted-foreground mb-2 font-medium">Demo class codes:</p>
-        <div className="flex flex-wrap gap-2">
-          {classRooms.map(c => (
-            <span key={c.id} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-display font-bold">
-              {c.classCode}
-            </span>
-          ))}
-        </div>
       </div>
     </motion.div>
   );

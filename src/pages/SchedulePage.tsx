@@ -4,8 +4,8 @@ import { useSchedules } from '@/hooks/use-schedules';
 import { Calendar, Clock, MapPin, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const days = ['All', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const dayMap: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday' };
+const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dayMap: Record<string, string> = { Sun: 'Sunday', Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday' };
 
 const statusColors = {
   Scheduled: 'text-green-400 bg-green-400/10',
@@ -14,11 +14,11 @@ const statusColors = {
 };
 
 export default function SchedulePage() {
-  const [filterDay, setFilterDay] = useState('All');
+  const [filterDay, setFilterDay] = useState('Mon');
   const navigate = useNavigate();
   const { id: classId } = useParams();
   const { schedules } = useSchedules(classId);
-  const filtered = filterDay === 'All' ? schedules : schedules.filter(s => s.day === dayMap[filterDay]);
+  const filtered = schedules.filter(s => s.day === dayMap[filterDay]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-24">
